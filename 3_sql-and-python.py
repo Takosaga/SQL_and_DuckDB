@@ -263,5 +263,47 @@ def _(ibis, persistent_ducks):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    **Exercise 3.04**
+
+
+    Convert the SQL query below into an Ibis expression. You are welcome to ignore the column renaming - think of it as a "stretch-goal" if you have time! We did not cover how to do that yet.
+    ```sql
+    SELECT
+        Species_Common_Name,
+        AVG(Beak_Width) AS Avg_Beak_Width,
+        AVG(Beak_Depth) AS Avg_Beak_Depth,
+        AVG(Beak_Length_Culmen) AS Avg_Beak_Length_Culmen
+    FROM 'birds.csv'
+    GROUP BY Species_Common_Name
+    ```
+    """
+    )
+    return
+
+
+@app.cell
+def _(con, ibis):
+    birds_ibis = ibis.read_csv('birds.csv')
+    persistent_birds = con.create_table('persistent_birds', obj=birds_ibis.to_pyarrow(), overwrite=True)
+    persistent_birds
+    return (persistent_birds,)
+
+
+@app.cell
+def _(persistent_birds):
+    birds_averages = (persistent_birds
+        .select("Species_Common_Name","Beak_Width","Beak_Depth","Beak_Length_Culmen")
+        .group_by("Species_Common_Name")
+        .aggregate([_.Beak_Width.mean(),_.Beak_Depth.mean(),_.Beak_Length_Culmen.mean()])
+    )
+    birds_averages
+
+    return
+
+
 if __name__ == "__main__":
     app.run()
